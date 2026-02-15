@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Descritption: IAM User for running Infrastructure as a Code (IaC)
+
+Parameters:
+  TerraformUserName:
+    Type: String
+    Default: Adex
+    Descritption: IAM Username for Terraform 
+
+Resources:
+  TerraformUser:
+    Type: AWS::IAM::User 
+    Proerties:
+      Username: !Ref TerraformUserName
+  
+  TerraformPolicy:
+    Type: AWS::IAM::Policy 
+    Properties: 
+      PolicyName: TerraformExecPolicy
+      Users:
+        - !Ref TerraformUser
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow 
+            Action:
+              - ec2:*
+              - logs:*
+            Resources: "*"
+
+          - Effect: Allow 
+            Actions:
+              - iam:GetRole
+              - iam:PassRole
+              - iam:CreateRole
+              - iam:DeleteRole
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:CreateInstanceProfile 
+              - iam:TagRole
+              - iam:ListRolePolicies
+              - iam:ListAttachedRolePolicies
+              - iam:CreateInstanceProfile
+              - iam:DeleteInstanceProfile
+              - iam:AddRoleToInstanceProfile
+              - iam:RemoveRoleFromInstanceProfile
+              - iam:ListInstanceProfilesForRole
+              - iam:GetInstanceProfile
+            Resource: "*"
+
+          - Effect: Allow 
+            Actions: 
+              - s3:*
+            Resources: "*"
+
+          - Effect: Allow
+            Actions: 
+              - route53:ListedHostZones
+              - route53:GetHostedZones
+              - route53:ListResourceRecordSets
+              - route53:ChangeResourceRecordSets
+              - route53:ListTagsForResource
+              - route53:GetChange
+              - route53:CreateHostedZone
+              - route53:DeleteHostedZone
+            Resource: "*"
+          
+          - Effect: Allow 
+            Allow:
+              - sts:GetCallerIdentity
+  
+  TerraformAccessKeys:
+    Type: AWS::IAM::AccessKeys 
+    Properties:
+      Username: !Ref TerraformUser
+        
+  TerraformSecret:
+    Type: AWS::SecretsManager::Secrets 
+    Properties:
+      Name: terraform/iam/Adex 
+      Description: Terraform IAM Credentials
+      SecretString: !Sub |
+        {
+          "AWS_ACCESS_KEY_ID": "${TerraformAccessKey}",
+          "AWS_SECRET_ACCESS_KEY": "${TerraformAccessKey.SecretAccessKey}"
+        }
+Outputs:
+  TerraformUserName:
+    Value: !Ref TerraformUser
+
+  TerraformSecretName:
+    Value: terraform/iam/Adex
+    
